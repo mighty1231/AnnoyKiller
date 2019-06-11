@@ -6,6 +6,11 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.service.quicksettings.Tile;
 import android.service.quicksettings.TileService;
+
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.regex.Pattern;
 
 import java.util.List;
@@ -27,19 +32,26 @@ public class KillerService extends TileService {
         Tile qsTile = getQsTile();
         // kill something
         qsTile.setLabel("Killing...");
+        qsTile.updateTile();
         kill();
     }
 
     public void kill() {
         SharedPreferences pref = getSharedPreferences("pref", MODE_PRIVATE);
         String regex = pref.getString("kill", ".*youtube.*");
-        int attempt = pref.getInt("numk", 0) + 1;
+        int attempt = pref.getInt("num", 0) + 1;
 
         List<PackageInfo> packs = getApplicationContext().getPackageManager().getInstalledPackages(0);
 
         ActivityManager am = (ActivityManager)getSystemService(Activity.ACTIVITY_SERVICE);
 
-        StringBuilder sb = new StringBuilder(String.format("Kill attempt #%d with %s\n", attempt, regex));
+        StringBuilder sb = new StringBuilder(String.format("KILL ATTEMPT #%d with %s\n", attempt, regex));
+        Date currentTime = Calendar.getInstance().getTime();
+        DateFormat dateFormat = new SimpleDateFormat("yyyy-mm-dd hh:mm:ss");
+        String strDate = dateFormat.format(currentTime);
+        sb.append("Executed Time: ");
+        sb.append(strDate);
+        sb.append('\n');
 
         for (PackageInfo pack : packs){
             if (Pattern.matches(regex, pack.packageName)) {
@@ -52,7 +64,11 @@ public class KillerService extends TileService {
         // save SharedPreferences
         SharedPreferences.Editor editor = pref.edit();
         editor.putString("log", sb.toString());
-        editor.putInt("numk", attempt);
+        editor.putInt("num", attempt);
         editor.commit();
+
+        Tile qsTile = getQsTile();
+        qsTile.setLabel("Killer");
+        qsTile.updateTile();
     }
 }
